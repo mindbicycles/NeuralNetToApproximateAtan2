@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows; 
 
 
@@ -6,6 +7,7 @@ using System.Windows;
 //based on source Code From Neural Networks Using C# Succinctly by James McCaffrey, forked from https://github.com/mindbicycles/NeuralNetworksUsingCSharpSuccinctly/blob/master/Chapter4-BackProp/Program.cs 
 class ProgramApproximateAtan2 {
     static void Main(string[] args) {
+
 
         Console.WriteLine("Creating a 2-4-8-1 neural network\n"); 
         int numInput = 2;
@@ -41,7 +43,7 @@ class ProgramApproximateAtan2 {
         Console.WriteLine("Setting fixed target outputs = "); 
         ShowVector(tValues, 2, 4, true);
 
-        double learnRate =  0.005; //0.05;
+        double learnRate =  0.002; //0.05;
         double momentum = 0.01;
         int maxEpochs = 1000000;
         Console.WriteLine("\nSetting learning rate = " + learnRate.ToString("F2")); 
@@ -49,7 +51,7 @@ class ProgramApproximateAtan2 {
         Console.WriteLine("Setting max epochs = " + maxEpochs + "\n");
         nn.FindWeights(tValues, xValues, learnRate, momentum, maxEpochs);
         double[] bestWeights = nn.GetWeights(); Console.WriteLine("\nBest weights found:"); 
-        ShowVector(bestWeights, 8, 4, true);
+        ShowVectorCommaSeparated(bestWeights);
         Console.WriteLine("\nEnd back-propagation demo\n");
         Console.ReadLine(); 
     } // Main
@@ -61,6 +63,14 @@ class ProgramApproximateAtan2 {
             Console.Write(vector[i].ToString("F" + decimals).PadLeft(decimals + 4) + " "); 
         }
         if (newLine == true) Console.WriteLine(""); 
+    }
+
+    public static void ShowVectorCommaSeparated(double[] vector)
+    {
+        for (int i = 0; i < vector.Length; ++i)
+        {
+            Console.Write(vector[i] + ",");
+        }
     }
 
     public static void ShowMatrix(double[][] matrix, int decimals) 
@@ -393,8 +403,28 @@ public class NeuralNetwork
             if(Double.IsNaN(yValues[0]))
                 break;
 
-            if (Math.Abs(loss) < 0.0001 &&  Math.Abs(prevLoss) < 0.0001)
+            if (epoch == maxEpochs || (Math.Abs(loss) < 0.0001 &&  Math.Abs(prevLoss) < 0.0001))
             {
+                using (StreamWriter writetext = new StreamWriter("writeAtan.csv"))
+                {
+                    //output to csv to plot on spreadsheet (scatterplot)
+                    writetext.WriteLine("AngleDeg,groundTruth,Predicted");
+
+                    for (int i = 0; i <= 90; i++)
+                    {
+                        double angleDeg = i;
+                        double angleRad = angleDeg * Math.PI / 180.0;
+                        double cos = Math.Cos(angleRad);
+                        double sin = Math.Sin(angleRad);
+                        double atan2 = Math.Atan2(sin, cos);
+
+                        xValues[0] = cos;
+                        xValues[1] = sin;
+                        yValues = ComputeOutputs(xValues); 
+                        writetext.WriteLine(angleDeg + "," + atan2 + ","+yValues[0]);
+                    }
+                }
+
                 break;
             }
                     
